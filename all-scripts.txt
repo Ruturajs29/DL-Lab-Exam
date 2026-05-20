@@ -1,0 +1,3600 @@
+# ============================================================
+# BEGIN FILE: lab-decision-tree.py
+# ============================================================
+# =========================================================
+# ASSIGNMENT 5: DECISION TREES & ENSEMBLE METHODS
+# =========================================================
+
+# Import numerical operations library
+import numpy as np
+
+# Import pandas for dataframe handling
+import pandas as pd
+
+# Import matplotlib for visualization
+import matplotlib.pyplot as plt
+
+# Import datasets
+from sklearn.datasets import load_iris, fetch_california_housing
+
+# Split dataset into train and test sets
+from sklearn.model_selection import train_test_split
+
+# Decision Tree models and visualization
+from sklearn.tree import (
+    DecisionTreeClassifier,
+    DecisionTreeRegressor,
+    plot_tree
+)
+
+# Evaluation metrics
+from sklearn.metrics import accuracy_score, r2_score
+
+# Ensemble methods
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    RandomForestRegressor,
+    AdaBoostClassifier
+)
+
+# =========================================================
+# PART 1: CLASSIFICATION USING IRIS DATASET
+# =========================================================
+
+print("\n========== CLASSIFICATION ==========" + "\n")
+
+
+# =========================================================
+# LOAD IRIS DATASET
+# =========================================================
+
+# load_iris() loads built-in iris flower dataset
+iris = load_iris()
+
+# Input features
+# Contains:
+# sepal length
+# sepal width
+# petal length
+# petal width
+
+X = iris.data
+
+# Target labels
+# 0 -> Setosa
+# 1 -> Versicolor
+# 2 -> Virginica
+
+y = iris.target
+
+
+# =========================================================
+# SPLIT DATASET
+# =========================================================
+
+# Split data into:
+# training data -> model learns
+# testing data -> model evaluation
+#
+# test_size=0.2
+# 20% data used for testing
+#
+# random_state=42
+# ensures same random split every run
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+
+# =========================================================
+# DECISION TREE CLASSIFIER
+# =========================================================
+
+# Create Decision Tree classifier
+dt_clf = DecisionTreeClassifier(random_state=42)
+
+# Train the model
+# fit() builds the decision tree
+dt_clf.fit(X_train, y_train)
+
+
+# =========================================================
+# MODEL PERFORMANCE
+# =========================================================
+
+# Predict training data
+y_train_pred = dt_clf.predict(X_train)
+
+# Predict testing data
+y_test_pred = dt_clf.predict(X_test)
+
+# Calculate training accuracy
+train_accuracy = accuracy_score(y_train, y_train_pred)
+
+# Calculate testing accuracy
+test_accuracy = accuracy_score(y_test, y_test_pred)
+
+# Display accuracies
+print("Decision Tree Train Accuracy:", train_accuracy)
+print("Decision Tree Test Accuracy:", test_accuracy)
+
+
+# =========================================================
+# COST COMPLEXITY PRUNING
+# =========================================================
+
+# Decision trees can overfit.
+# Pruning removes unnecessary branches.
+
+# Get pruning path
+path = dt_clf.cost_complexity_pruning_path(X_train, y_train)
+
+# Extract alpha values
+ccp_alphas = path.ccp_alphas
+
+# Store pruned models
+models = []
+
+
+# Train multiple pruned trees
+for alpha in ccp_alphas:
+
+    # ccp_alpha controls pruning strength
+    clf = DecisionTreeClassifier(ccp_alpha=alpha)
+
+    # Train pruned tree
+    clf.fit(X_train, y_train)
+
+    # Store model
+    models.append(clf)
+
+
+# =========================================================
+# EVALUATE PRUNED MODELS
+# =========================================================
+
+# Training accuracies
+train_scores = [
+
+    accuracy_score(y_train, model.predict(X_train))
+
+    for model in models
+]
+
+# Testing accuracies
+test_scores = [
+
+    accuracy_score(y_test, model.predict(X_test))
+
+    for model in models
+]
+
+# Select best model
+best_model = models[np.argmax(test_scores)]
+
+# Print best accuracy
+print("Best Accuracy after Pruning:", max(test_scores))
+
+
+# =========================================================
+# RANDOM FOREST CLASSIFIER
+# =========================================================
+
+# Random Forest combines multiple decision trees
+# to reduce overfitting
+
+rf_clf = RandomForestClassifier(
+    n_estimators=100,   # Number of trees
+    random_state=42
+)
+
+# Train Random Forest
+rf_clf.fit(X_train, y_train)
+
+# Predict testing data
+rf_pred = rf_clf.predict(X_test)
+
+# Calculate accuracy
+rf_accuracy = accuracy_score(y_test, rf_pred)
+
+print("Random Forest Accuracy:", rf_accuracy)
+
+
+# =========================================================
+# ADABOOST CLASSIFIER (DECISION STUMPS)
+# =========================================================
+
+# Decision stump:
+# Decision tree with max_depth=1
+
+stump = DecisionTreeClassifier(max_depth=1)
+
+# AdaBoost combines multiple weak learners
+ada = AdaBoostClassifier(
+
+    estimator=stump,
+
+    n_estimators=50,
+
+    random_state=42
+)
+
+# Train AdaBoost model
+ada.fit(X_train, y_train)
+
+# Predict testing data
+ada_pred = ada.predict(X_test)
+
+# Calculate accuracy
+ada_accuracy = accuracy_score(y_test, ada_pred)
+
+print("AdaBoost Accuracy:", ada_accuracy)
+
+
+# =========================================================
+# PART 2: REGRESSION USING CALIFORNIA HOUSING
+# =========================================================
+
+print("\n========== REGRESSION ==========" + "\n")
+
+
+# =========================================================
+# LOAD CALIFORNIA HOUSING DATASET
+# =========================================================
+
+# fetch_california_housing()
+# loads housing price dataset
+
+housing = fetch_california_housing()
+
+# Input features
+X = housing.data
+
+# Target values (house prices)
+y = housing.target
+
+
+# =========================================================
+# SPLIT DATASET
+# =========================================================
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+
+# =========================================================
+# DECISION TREE REGRESSOR
+# =========================================================
+
+# Create regression tree
+dt_reg = DecisionTreeRegressor(random_state=42)
+
+# Train model
+dt_reg.fit(X_train, y_train)
+
+
+# =========================================================
+# REGRESSION PERFORMANCE
+# =========================================================
+
+# Predict training data
+y_train_pred = dt_reg.predict(X_train)
+
+# Predict testing data
+y_test_pred = dt_reg.predict(X_test)
+
+# Calculate R² score for training data
+train_r2 = r2_score(y_train, y_train_pred)
+
+# Calculate R² score for testing data
+test_r2 = r2_score(y_test, y_test_pred)
+
+# Display results
+print("Decision Tree Train R²:", train_r2)
+print("Decision Tree Test R²:", test_r2)
+
+
+# =========================================================
+# COST COMPLEXITY PRUNING FOR REGRESSION
+# =========================================================
+
+# Get pruning path
+path = dt_reg.cost_complexity_pruning_path(X_train, y_train)
+
+# Extract alpha values
+ccp_alphas = path.ccp_alphas
+
+# Store models
+models = []
+
+
+# Train multiple pruned regression trees
+for alpha in ccp_alphas:
+
+    # Create pruned regressor
+    reg = DecisionTreeRegressor(ccp_alpha=alpha)
+
+    # Train model
+    reg.fit(X_train, y_train)
+
+    # Store model
+    models.append(reg)
+
+
+# =========================================================
+# EVALUATE PRUNED REGRESSION MODELS
+# =========================================================
+
+# Training R² scores
+train_scores = [
+
+    r2_score(y_train, model.predict(X_train))
+
+    for model in models
+]
+
+# Testing R² scores
+test_scores = [
+
+    r2_score(y_test, model.predict(X_test))
+
+    for model in models
+]
+
+# Best model selection
+best_model = models[np.argmax(test_scores)]
+
+# Display best R² score
+print("Best R² after Pruning:", max(test_scores))
+
+
+# =========================================================
+# RANDOM FOREST REGRESSOR
+# =========================================================
+
+# Random Forest Regressor
+rf_reg = RandomForestRegressor(
+
+    n_estimators=100,
+
+    random_state=42
+)
+
+# Train model
+rf_reg.fit(X_train, y_train)
+
+# Predict testing data
+rf_pred = rf_reg.predict(X_test)
+
+# Calculate R² score
+rf_r2 = r2_score(y_test, rf_pred)
+
+print("Random Forest R²:", rf_r2)
+
+
+# =========================================================
+# TREE VISUALIZATION
+# =========================================================
+
+# Create figure
+plt.figure(figsize=(10, 6))
+
+# Draw decision tree
+plot_tree(
+
+    dt_clf,
+
+    filled=True,
+
+    feature_names=iris.feature_names,
+
+    class_names=iris.target_names
+)
+
+# Graph title
+plt.title("Decision Tree Classifier")
+
+# Display graph
+plt.show()
+
+# ============================================================
+# END FILE: lab-decision-tree.py
+# ============================================================
+
+
+# ============================================================
+# BEGIN FILE: lab1.py
+# ============================================================
+# This code performs:
+
+# Load heart dataset
+# Convert categorical columns into machine-readable format
+# Standardize data
+# Apply PCA
+# Analyze variance captured by components
+# Visualize reduced data in 2D
+
+# Main goal:
+# Reduce dimensions while preserving maximum information
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+# Load the dataset
+url = "https://raw.githubusercontent.com/sharmaroshan/Heart-UCI-Dataset/master/heart.csv"
+df = pd.read_csv(url)
+
+# Convert categorical data to numerical (One-Hot Encoding)
+cat_cols = ['cp', 'restecg', 'slope', 'ca', 'thal']
+df_encoded = pd.get_dummies(df, columns=cat_cols, prefix=cat_cols) # Converts categories into binary columns.
+df_encoded = df_encoded.astype(int)
+
+# Separate features (X) and target (y)
+# We drop 'target' because PCA is unsupervised
+X = df_encoded.drop('target', axis=1)
+y = df_encoded['target']
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+print("Data Standardized. Mean is now approx 0 and Variance is 1.")
+
+
+# Initialize PCA - we calculate all components to see the full variance spread
+pca = PCA()
+X_pca = pca.fit_transform(X_scaled)
+
+print(f"Original number of features: {X.shape[1]}")
+print(f"PCA reduced representation shape: {X_pca.shape}")
+
+explained_variance = pca.explained_variance_ratio_
+cumulative_variance = np.cumsum(explained_variance)
+
+plt.figure(figsize=(10, 5))
+plt.bar(range(1, len(explained_variance) + 1), explained_variance, alpha=0.6, color='g', label='Individual Variance')
+plt.step(range(1, len(cumulative_variance) + 1), cumulative_variance, where='mid', label='Cumulative Variance')
+
+plt.axhline(y=0.9, color='r', linestyle='--', label='90% Variance Threshold')
+plt.ylabel('Explained Variance Ratio')
+plt.xlabel('Principal Component Index')
+plt.title('Scree Plot')
+plt.legend(loc='best')
+plt.grid(True)
+plt.show()
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=y, palette='Set1', alpha=0.7)
+
+plt.xlabel('Principal Component 1 (PC1)')
+plt.ylabel('Principal Component 2 (PC2)')
+plt.title('PCA: 2D Projection of Heart Disease Dataset')
+plt.legend(title='Condition', labels=['Healthy', 'Heart Disease'])
+plt.grid(True)
+plt.show()
+
+# PCA Lab Explanation Script
+
+# “Today I performed dimensionality reduction using PCA on the Heart Disease dataset.
+
+# First, I imported required libraries like Pandas, NumPy, Matplotlib, Seaborn, StandardScaler from sklearn.preprocessing, and PCA from sklearn.decomposition.
+
+# ```python
+# import pandas as pd
+# import numpy as np
+# ```
+
+# Pandas is used for dataframe handling and NumPy is used for numerical operations.
+
+# ```python
+# import matplotlib.pyplot as plt
+# import seaborn as sns
+# ```
+
+# These libraries are used for visualization.
+
+# ```python
+# from sklearn.preprocessing import StandardScaler
+# from sklearn.decomposition import PCA
+# ```
+
+# StandardScaler is used for feature scaling and PCA is used for dimensionality reduction.
+
+# ---
+
+# Next, I loaded the dataset using:
+
+# ```python
+# df = pd.read_csv(url)
+# ```
+
+# `read_csv()` reads the CSV file and converts it into a dataframe.
+
+# ---
+
+# Then I performed one-hot encoding on categorical columns.
+
+# ```python
+# cat_cols = ['cp', 'restecg', 'slope', 'ca', 'thal']
+# df_encoded = pd.get_dummies(df, columns=cat_cols, prefix=cat_cols)
+# ```
+
+# I used `get_dummies()` because PCA works only on numerical data.
+
+# Categorical columns like chest pain type and thalassemia contain categories, and one-hot encoding converts them into binary columns.
+
+# For example:
+
+# `cp`
+
+# becomes:
+
+# `cp_0, cp_1, cp_2, cp_3`
+
+# This avoids false ordering relationships between categories.
+
+# ---
+
+# Then I converted boolean values into integers.
+
+# ```python
+# df_encoded = df_encoded.astype(int)
+# ```
+
+# This converts True/False into 1/0.
+
+# ---
+
+# Next, I separated features and target.
+
+# ```python
+# X = df_encoded.drop('target', axis=1)
+# y = df_encoded['target']
+# ```
+
+# `X` contains input features and `y` contains labels.
+
+# I dropped the target column because PCA is an unsupervised learning algorithm and does not use class labels.
+
+# `axis=1` means column operation.
+
+# ---
+
+# After that, I standardized the data.
+
+# ```python
+# scaler = StandardScaler()
+# X_scaled = scaler.fit_transform(X)
+# ```
+
+# Standardization is very important before PCA because PCA is sensitive to feature scale.
+
+# Features with larger values can dominate the variance calculation.
+
+# StandardScaler transforms data using:
+
+# genui{"math_block_widget_always_prefetch_v2":{"content":"z=\\frac{x-\\mu}{\\sigma}"}}
+
+# where:
+
+# * x is original value
+# * μ is mean
+# * σ is standard deviation
+
+# After scaling, mean becomes approximately 0 and variance becomes 1.
+
+# `fit_transform()` first learns the mean and standard deviation using `fit()`, then applies scaling using `transform()`.
+
+# ---
+
+# Then I created the PCA object.
+
+# ```python
+# pca = PCA()
+# ```
+
+# This initializes PCA.
+
+# Since I did not specify `n_components`, PCA keeps all principal components.
+
+# ---
+
+# Next, I applied PCA transformation.
+
+# ```python
+# X_pca = pca.fit_transform(X_scaled)
+# ```
+
+# PCA internally:
+
+# * computes covariance matrix
+# * finds eigenvectors and eigenvalues
+# * identifies directions of maximum variance
+
+# These new directions are called principal components.
+
+# `fit_transform()` learns the components and projects data onto the new feature space.
+
+# ---
+
+# Then I checked the number of features.
+
+# ```python
+# X.shape[1]
+# ```
+
+# `shape[1]` gives the number of columns or features.
+
+# ---
+
+# Next, I calculated explained variance ratio.
+
+# ```python
+# explained_variance = pca.explained_variance_ratio_
+# ```
+
+# This tells how much variance each principal component captures.
+
+# For example:
+
+# * PC1 may capture 40%
+# * PC2 may capture 20%
+
+# ---
+
+# Then I calculated cumulative variance.
+
+# ```python
+# cumulative_variance = np.cumsum(explained_variance)
+# ```
+
+# `cumsum()` calculates running total of variance.
+
+# This helps determine how many principal components are needed to preserve most of the information.
+
+# ---
+
+# After that, I plotted the scree plot.
+
+# ```python
+# plt.bar()
+# plt.step()
+# ```
+
+# The bar graph shows individual explained variance and the step graph shows cumulative variance.
+
+# I also plotted a 90% threshold line.
+
+# ```python
+# plt.axhline(y=0.9)
+# ```
+
+# This helps identify the number of principal components required to retain 90% variance.
+
+# ---
+
+# Finally, I visualized the dataset in 2D PCA space.
+
+# ```python
+# sns.scatterplot(
+# x=X_pca[:,0],
+# y=X_pca[:,1],
+# hue=y
+# )
+# ```
+
+# `X_pca[:,0]` represents Principal Component 1 and `X_pca[:,1]` represents Principal Component 2.
+
+# `hue=y` colors points according to target class.
+
+# This visualization helps observe class separation in reduced dimensions.
+
+# ---
+
+# Conclusion:
+
+# Using PCA, I transformed the dataset into principal components that preserve maximum variance while reducing redundancy between features. PCA helps in dimensionality reduction, visualization, reducing computation, and improving model efficiency.”
+# ============================================================
+# END FILE: lab1.py
+# ============================================================
+
+
+# ============================================================
+# BEGIN FILE: lab2_mlr_slr.py
+# ============================================================
+# ==========================================
+# SIMPLE & MULTIPLE LINEAR REGRESSION
+# ==========================================
+
+# Import numerical computation library
+import numpy as np
+
+# Import pandas for dataframe handling
+import pandas as pd
+
+# Import matplotlib for visualization
+import matplotlib.pyplot as plt
+
+# Splits dataset into training and testing data
+from sklearn.model_selection import train_test_split
+
+# Linear Regression model
+from sklearn.linear_model import LinearRegression
+
+# Used for feature scaling / standardization
+from sklearn.preprocessing import StandardScaler
+
+# Evaluation metrics
+from sklearn.metrics import mean_squared_error, r2_score
+
+
+# ==========================================
+# CREATE DATASET
+# ==========================================
+
+# Creating a dictionary containing house data
+data = {
+    'Size': [800, 1000, 1200, 1500, 1800, 2000, 2200, None],
+    'Bedrooms': [2, 2, 3, 3, 4, 4, 5, 3],
+    'Age': [20, 15, 10, 8, 5, 3, 2, 12],
+    'Price': [50, 60, 75, 90, 120, 150, 170, 80]
+}
+
+# Convert dictionary into pandas dataframe
+df = pd.DataFrame(data)
+
+# Display dataset
+print("Original Dataset:\n")
+print(df)
+
+
+# ==========================================
+# HANDLE MISSING VALUES
+# ==========================================
+
+# fillna() replaces missing values (NaN)
+# df.mean() calculates mean of each column
+# inplace=True modifies original dataframe directly
+
+df.fillna(df.mean(), inplace=True)
+
+print("\nDataset After Handling Missing Values:\n")
+print(df)
+
+
+# ==========================================
+# FEATURE SCALING
+# ==========================================
+
+# Create scaler object
+scaler = StandardScaler()
+
+# List of input features
+features = ['Size', 'Bedrooms', 'Age']
+
+# fit_transform():
+# fit() -> learns mean and standard deviation
+# transform() -> applies standardization formula
+#
+# Formula:
+# z = (x - mean) / standard deviation
+
+df[features] = scaler.fit_transform(df[features])
+
+print("\nDataset After Feature Scaling:\n")
+print(df)
+
+
+# =========================================================
+# SIMPLE LINEAR REGRESSION
+# Predict Price using only Size
+# =========================================================
+
+# Independent variable (input feature)
+# Double brackets return dataframe (2D)
+X_simple = df[['Size']]
+
+# Dependent variable (target/output)
+y = df['Price']
+
+
+# Split dataset into training and testing data
+# test_size=0.2 means 20% data for testing
+# random_state=42 ensures same random split every run
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_simple,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+
+# Create Linear Regression model
+simple_model = LinearRegression()
+
+
+# Train model using training data
+# fit() learns slope and intercept of best fit line
+simple_model.fit(X_train, y_train)
+
+
+# Predict house prices for test data
+y_pred_simple = simple_model.predict(X_test)
+
+
+# ==========================================
+# EVALUATE SIMPLE LINEAR REGRESSION
+# ==========================================
+
+# Mean Squared Error
+# Measures average squared prediction error
+mse_simple = mean_squared_error(y_test, y_pred_simple)
+
+# Root Mean Squared Error
+# Square root of MSE
+rmse_simple = np.sqrt(mse_simple)
+
+# R² Score
+# Measures goodness of fit
+# Closer to 1 means better model
+r2_simple = r2_score(y_test, y_pred_simple)
+
+
+# Print evaluation metrics
+print("\n========== SIMPLE LINEAR REGRESSION ==========")
+print("MSE :", mse_simple)
+print("RMSE :", rmse_simple)
+print("R² Score :", r2_simple)
+
+
+# ==========================================
+# VISUALIZATION OF SIMPLE REGRESSION
+# ==========================================
+
+# Scatter plot of actual data points
+plt.scatter(X_simple, y, color='blue')
+
+# Regression line
+# predict(X_simple) predicts values for all points
+plt.plot(X_simple, simple_model.predict(X_simple), color='red')
+
+# Axis labels
+plt.xlabel("House Size (Scaled)")
+plt.ylabel("House Price")
+
+# Graph title
+plt.title("Simple Linear Regression")
+
+# Display graph
+plt.show()
+
+
+# =========================================================
+# MULTIPLE LINEAR REGRESSION
+# Predict Price using multiple features
+# =========================================================
+
+# Multiple input features
+X_multi = df[['Size', 'Bedrooms', 'Age']]
+
+# Target variable
+y = df['Price']
+
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X_multi,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+
+# Create Multiple Linear Regression model
+multi_model = LinearRegression()
+
+
+# Train model
+multi_model.fit(X_train, y_train)
+
+
+# Predict test data
+y_pred_multi = multi_model.predict(X_test)
+
+
+# ==========================================
+# EVALUATE MULTIPLE LINEAR REGRESSION
+# ==========================================
+
+# Mean Squared Error
+mse_multi = mean_squared_error(y_test, y_pred_multi)
+
+# Root Mean Squared Error
+rmse_multi = np.sqrt(mse_multi)
+
+# R² Score
+r2_multi = r2_score(y_test, y_pred_multi)
+
+
+# Print evaluation metrics
+print("\n========== MULTIPLE LINEAR REGRESSION ==========")
+print("MSE :", mse_multi)
+print("RMSE :", rmse_multi)
+print("R² Score :", r2_multi)
+
+
+# ==========================================
+# VISUALIZATION OF PREDICTIONS
+# ==========================================
+
+# Scatter plot:
+# x-axis -> Actual Prices
+# y-axis -> Predicted Prices
+
+plt.scatter(y_test, y_pred_multi, color='green')
+
+# Axis labels
+plt.xlabel("Actual Prices")
+plt.ylabel("Predicted Prices")
+
+# Graph title
+plt.title("Multiple Linear Regression Predictions")
+
+# Display graph
+plt.show()
+# ============================================================
+# END FILE: lab2_mlr_slr.py
+# ============================================================
+
+
+# ============================================================
+# BEGIN FILE: lab3_knn.py
+# ============================================================
+# ==========================================
+# K-NEAREST NEIGHBOUR (KNN) - IRIS DATASET
+# ==========================================
+
+# Import numerical library
+import numpy as np
+
+# Import pandas for dataframe handling
+import pandas as pd
+
+# Load Iris dataset from sklearn
+from sklearn.datasets import load_iris
+
+# Split dataset into training and testing sets
+from sklearn.model_selection import train_test_split
+
+# Import KNN classifier
+from sklearn.neighbors import KNeighborsClassifier
+
+# Import accuracy metric
+from sklearn.metrics import accuracy_score
+
+
+# ==========================================
+# LOAD THE IRIS DATASET
+# ==========================================
+
+# load_iris() loads built-in iris dataset
+iris = load_iris()
+
+# Features (input data)
+# Contains:
+# sepal length
+# sepal width
+# petal length
+# petal width
+
+X = iris.data
+
+# Target labels
+# 0 -> setosa
+# 1 -> versicolor
+# 2 -> virginica
+
+y = iris.target
+
+
+# ==========================================
+# DISPLAY DATASET INFORMATION
+# ==========================================
+
+# Print feature names
+print("Features:", iris.feature_names)
+
+# Print target class names
+print("Target names:", iris.target_names)
+
+
+# ==========================================
+# CREATE DATAFRAME (OPTIONAL)
+# ==========================================
+
+# Convert dataset into dataframe for better visualization
+iris_df = pd.DataFrame(X, columns=iris.feature_names)
+
+# Add target column
+iris_df['species'] = y
+
+# Display first 5 rows
+print("\nFirst 5 rows of dataset:\n")
+print(iris_df.head())
+
+
+# ==========================================
+# TRAIN TEST SPLIT
+# ==========================================
+
+# Split dataset into training and testing data
+#
+# test_size=0.3
+# 30% testing data
+#
+# random_state=42
+# ensures same random split every run
+#
+# stratify=y
+# maintains class distribution in train/test sets
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.3,
+    random_state=42,
+    stratify=y
+)
+
+# Print dataset sizes
+print(f"\nTraining set size: {X_train.shape[0]} samples")
+print(f"Testing set size: {X_test.shape[0]} samples")
+
+
+# ==========================================
+# CREATE KNN MODEL
+# ==========================================
+
+# Initialize KNN classifier
+#
+# n_neighbors=5 means:
+# model checks nearest 5 neighbours
+
+knn = KNeighborsClassifier(n_neighbors=5)
+
+
+# ==========================================
+# TRAIN THE MODEL
+# ==========================================
+
+# fit() stores training data internally
+# KNN is a lazy learner
+# It does not create mathematical equation
+
+knn.fit(X_train, y_train)
+
+print("\nKNN model trained successfully.")
+
+
+# ==========================================
+# MAKE PREDICTIONS
+# ==========================================
+
+# predict() classifies test samples
+y_pred = knn.predict(X_test)
+
+
+# ==========================================
+# EVALUATE MODEL
+# ==========================================
+
+# Calculate accuracy
+#
+# Accuracy =
+# correct predictions / total predictions
+
+accuracy = accuracy_score(y_test, y_pred)
+
+print(f"\nAccuracy of KNN Model: {accuracy:.2f}")
+
+
+# ==========================================
+# STORE CORRECT & WRONG PREDICTIONS
+# ==========================================
+
+correct_predictions = []
+wrong_predictions = []
+
+
+# Loop through all test samples
+for i in range(len(y_test)):
+
+    # Check if prediction is correct
+    if y_test[i] == y_pred[i]:
+
+        # Store correct prediction details
+        correct_predictions.append({
+
+            'Features': X_test[i],
+
+            'Actual': iris.target_names[y_test[i]],
+
+            'Predicted': iris.target_names[y_pred[i]]
+
+        })
+
+    else:
+
+        # Store wrong prediction details
+        wrong_predictions.append({
+
+            'Features': X_test[i],
+
+            'Actual': iris.target_names[y_test[i]],
+
+            'Predicted': iris.target_names[y_pred[i]]
+
+        })
+
+
+# ==========================================
+# DISPLAY RESULTS
+# ==========================================
+
+print(f"\nTotal Correct Predictions: {len(correct_predictions)}")
+
+print(f"Total Wrong Predictions: {len(wrong_predictions)}")
+
+
+# ==========================================
+# PRINT CORRECT PREDICTIONS
+# ==========================================
+
+print("\n========== CORRECT PREDICTIONS ==========")
+
+if correct_predictions:
+
+    for pred in correct_predictions:
+
+        print(
+            f"Features: {pred['Features']}, "
+            f"Actual: {pred['Actual']}, "
+            f"Predicted: {pred['Predicted']}"
+        )
+
+else:
+    print("No correct predictions found.")
+
+
+# ==========================================
+# PRINT WRONG PREDICTIONS
+# ==========================================
+
+print("\n========== WRONG PREDICTIONS ==========")
+
+if wrong_predictions:
+
+    for pred in wrong_predictions:
+
+        print(
+            f"Features: {pred['Features']}, "
+            f"Actual: {pred['Actual']}, "
+            f"Predicted: {pred['Predicted']}"
+        )
+
+else:
+    print("No wrong predictions found.")
+# ============================================================
+# END FILE: lab3_knn.py
+# ============================================================
+
+
+# ============================================================
+# BEGIN FILE: lab4-navie-bayes.py
+# ============================================================
+# ==========================================
+# NAÏVE BAYES CLASSIFIER - IRIS DATASET
+# ==========================================
+
+# Import Iris dataset
+from sklearn.datasets import load_iris
+
+# Split dataset into train and test sets
+from sklearn.model_selection import train_test_split
+
+# Gaussian Naïve Bayes classifier
+from sklearn.naive_bayes import GaussianNB
+
+# Accuracy evaluation metric
+from sklearn.metrics import accuracy_score
+
+
+# ==========================================
+# LOAD THE IRIS DATASET
+# ==========================================
+
+# load_iris() loads built-in iris flower dataset
+iris = load_iris()
+
+# Features (input data)
+#
+# Contains:
+# sepal length
+# sepal width
+# petal length
+# petal width
+
+X = iris.data
+
+# Target labels
+#
+# 0 -> setosa
+# 1 -> versicolor
+# 2 -> virginica
+
+y = iris.target
+
+
+# ==========================================
+# SPLIT DATASET
+# ==========================================
+
+# Split dataset into:
+# training data -> model learns
+# testing data -> model evaluation
+#
+# test_size=0.3
+# 30% data used for testing
+#
+# random_state=42
+# ensures same random split every run
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.3,
+    random_state=42
+)
+
+
+# ==========================================
+# CREATE NAÏVE BAYES MODEL
+# ==========================================
+
+# GaussianNB()
+#
+# Gaussian Naïve Bayes assumes:
+# feature values follow normal distribution
+
+model = GaussianNB()
+
+
+# ==========================================
+# TRAIN THE MODEL
+# ==========================================
+
+# fit() trains the model
+#
+# Model learns:
+# - probability of each class
+# - mean of each feature
+# - variance of each feature
+
+model.fit(X_train, y_train)
+
+
+# ==========================================
+# MAKE PREDICTIONS
+# ==========================================
+
+# predict() predicts flower class
+# for test data
+
+y_pred = model.predict(X_test)
+
+
+# ==========================================
+# CALCULATE ACCURACY
+# ==========================================
+
+# accuracy_score()
+#
+# Accuracy =
+# correct predictions / total predictions
+
+accuracy = accuracy_score(y_test, y_pred)
+
+
+# ==========================================
+# DISPLAY RESULT
+# ==========================================
+
+print(f"Naïve Bayes Classifier Accuracy: {accuracy * 100:.2f}%")
+# ============================================================
+# END FILE: lab4-navie-bayes.py
+# ============================================================
+
+
+# ============================================================
+# BEGIN FILE: lab6-cnn-multclass-classifier-emnist.py
+# ============================================================
+# ============================================================
+# ASSIGNMENT 6
+# CNN Multiclass Classifier using MNIST Dataset
+# ============================================================
+
+# ============================================================
+# IMPORT LIBRARIES
+# ============================================================
+
+# Numerical computations
+import numpy as np
+
+# Plotting graphs and images
+import matplotlib.pyplot as plt
+
+# Better visualization for confusion matrix
+import seaborn as sns
+
+# MNIST dataset (handwritten digits)
+from tensorflow.keras.datasets import mnist
+
+# Sequential model = layers stacked one after another
+from tensorflow.keras.models import Sequential
+
+# CNN layers
+from tensorflow.keras.layers import (
+    Conv2D,          # Convolution layer
+    MaxPooling2D,    # Pooling layer
+    Flatten,         # Converts 2D -> 1D
+    Dense            # Fully connected layer
+)
+
+# Converts labels into one-hot encoded format
+from tensorflow.keras.utils import to_categorical
+
+# Evaluation metrics
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report
+)
+
+# ============================================================
+# PART (a) DATA PREPROCESSING
+# ============================================================
+
+print("\n========== DATA PREPROCESSING ==========" + "\n")
+
+# ------------------------------------------------------------
+# LOAD DATASET
+# ------------------------------------------------------------
+# MNIST contains handwritten digit images (0-9)
+#
+# X_train -> training images
+# y_train -> training labels
+# X_test  -> testing images
+# y_test  -> testing labels
+#
+# Shape of X_train:
+# (60000, 28, 28)
+#
+# Meaning:
+# 60000 images
+# each image size = 28x28 pixels
+# ------------------------------------------------------------
+
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+# ------------------------------------------------------------
+# DISPLAY SHAPES
+# ------------------------------------------------------------
+
+print("Training Data Shape :", X_train.shape)
+print("Testing Data Shape  :", X_test.shape)
+
+# ------------------------------------------------------------
+# RESHAPE IMAGES
+# ------------------------------------------------------------
+# CNN expects input in this format:
+#
+# (samples, height, width, channels)
+#
+# Since MNIST is grayscale:
+# channels = 1
+#
+# Original:
+# (60000, 28, 28)
+#
+# After reshape:
+# (60000, 28, 28, 1)
+# ------------------------------------------------------------
+
+X_train = X_train.reshape(-1, 28, 28, 1)
+X_test = X_test.reshape(-1, 28, 28, 1)
+
+# ------------------------------------------------------------
+# NORMALIZATION
+# ------------------------------------------------------------
+# Pixel values originally range from:
+# 0 -> 255
+#
+# Neural networks train better when values are small.
+#
+# So we scale values into:
+# 0 -> 1
+#
+# Formula:
+# normalized_value = pixel / 255
+# ------------------------------------------------------------
+
+X_train = X_train / 255.0
+X_test = X_test / 255.0
+
+# ------------------------------------------------------------
+# ONE HOT ENCODING
+# ------------------------------------------------------------
+# Labels are originally:
+# 5, 0, 7, 2 ...
+#
+# Convert into:
+#
+# 5 -> [0 0 0 0 0 1 0 0 0 0]
+#
+# Because output layer has 10 neurons.
+# ------------------------------------------------------------
+
+y_train_cat = to_categorical(y_train, 10)
+y_test_cat = to_categorical(y_test, 10)
+
+print("\nData Preprocessing Completed!\n")
+
+# ============================================================
+# PART (b) BUILD CNN MODEL
+# ============================================================
+
+print("\n========== BUILDING CNN MODEL ==========" + "\n")
+
+# ------------------------------------------------------------
+# CREATE MODEL
+# ------------------------------------------------------------
+# Sequential means:
+# layers are added one after another.
+# ------------------------------------------------------------
+
+model = Sequential([
+
+    # ========================================================
+    # FIRST CONVOLUTION LAYER
+    # ========================================================
+
+    # Conv2D:
+    # Applies filters/kernels on image
+    #
+    # 32 = number of filters
+    #
+    # (3,3) = filter size
+    #
+    # activation='relu'
+    # ReLU helps introduce non-linearity
+    #
+    # input_shape=(28,28,1)
+    # height=28
+    # width=28
+    # channels=1 (grayscale)
+    #
+    # This layer learns:
+    # edges, lines, corners
+    # ========================================================
+
+    Conv2D(
+        filters=32,
+        kernel_size=(3, 3),
+        activation='relu',
+        input_shape=(28, 28, 1)
+    ),
+
+    # ========================================================
+    # MAX POOLING LAYER
+    # ========================================================
+    # Reduces image size
+    #
+    # (2,2) means:
+    # take maximum from every 2x2 region
+    #
+    # Benefits:
+    # - reduces computation
+    # - reduces overfitting
+    # - keeps important features
+    # ========================================================
+
+    MaxPooling2D(pool_size=(2, 2)),
+
+    # ========================================================
+    # SECOND CONVOLUTION LAYER
+    # ========================================================
+    # More filters = learning more complex features
+    #
+    # Earlier layer:
+    # learns edges
+    #
+    # Later layer:
+    # learns digit shapes/patterns
+    # ========================================================
+
+    Conv2D(
+        filters=64,
+        kernel_size=(3, 3),
+        activation='relu'
+    ),
+
+    # ========================================================
+    # SECOND POOLING LAYER
+    # ========================================================
+
+    MaxPooling2D(pool_size=(2, 2)),
+
+    # ========================================================
+    # FLATTEN LAYER
+    # ========================================================
+    # Converts multidimensional data into vector
+    #
+    # Example:
+    # 5x5x64 -> 1600 vector
+    #
+    # Needed before Dense layers
+    # ========================================================
+
+    Flatten(),
+
+    # ========================================================
+    # DENSE (FULLY CONNECTED) LAYER
+    # ========================================================
+    # 128 neurons
+    #
+    # Learns high-level combinations of features
+    # ========================================================
+
+    Dense(128, activation='relu'),
+
+    # ========================================================
+    # OUTPUT LAYER
+    # ========================================================
+    # 10 neurons because:
+    # digits = 0 to 9
+    #
+    # Softmax converts outputs into probabilities
+    #
+    # Example output:
+    # [0.01,0.02,0.90,...]
+    # ========================================================
+
+    Dense(10, activation='softmax')
+])
+
+# ============================================================
+# MODEL SUMMARY
+# ============================================================
+# Shows:
+# - layers
+# - output shapes
+# - number of parameters
+# ============================================================
+
+model.summary()
+
+# ============================================================
+# COMPILE MODEL
+# ============================================================
+
+# optimizer='adam'
+# Adam optimizer updates weights efficiently
+#
+# loss='categorical_crossentropy'
+# Used for multiclass classification
+#
+# metrics=['accuracy']
+# Tracks accuracy during training
+# ============================================================
+
+model.compile(
+    optimizer='adam',
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# ============================================================
+# TRAIN MODEL
+# ============================================================
+
+print("\n========== TRAINING MODEL ==========" + "\n")
+
+# model.fit() starts learning
+#
+# epochs=5
+# means complete dataset is passed 5 times
+#
+# batch_size=64
+# model processes 64 images at once
+#
+# validation_data
+# checks performance on unseen data
+# ============================================================
+
+history = model.fit(
+    X_train,
+    y_train_cat,
+
+    epochs=5,
+    batch_size=64,
+
+    validation_data=(X_test, y_test_cat)
+)
+
+print("\nModel Training Completed!\n")
+
+# ============================================================
+# PART (c) MODEL EVALUATION
+# ============================================================
+
+print("\n========== MODEL EVALUATION ==========" + "\n")
+
+# ------------------------------------------------------------
+# PREDICT PROBABILITIES
+# ------------------------------------------------------------
+# Example output:
+#
+# [0.01, 0.02, 0.91, ...]
+#
+# Highest probability = predicted class
+# ------------------------------------------------------------
+
+y_pred_probs = model.predict(X_test)
+
+# ------------------------------------------------------------
+# CONVERT PROBABILITIES -> CLASS LABELS
+# ------------------------------------------------------------
+# np.argmax() returns index of highest probability
+#
+# Example:
+# [0.01,0.02,0.91]
+#
+# Prediction = class 2
+# ------------------------------------------------------------
+
+y_pred = np.argmax(y_pred_probs, axis=1)
+
+# ============================================================
+# CONFUSION MATRIX
+# ============================================================
+# Shows:
+# actual vs predicted classes
+#
+# Diagonal values:
+# correct predictions
+#
+# Off-diagonal values:
+# wrong predictions
+# ============================================================
+
+cm = confusion_matrix(y_test, y_pred)
+
+# ============================================================
+# PLOT CONFUSION MATRIX
+# ============================================================
+
+plt.figure(figsize=(10, 8))
+
+sns.heatmap(
+    cm,
+    annot=True,      # show numbers
+    fmt='d',         # integer format
+    cmap='Blues'     # color theme
+)
+
+plt.xlabel("Predicted Labels")
+plt.ylabel("Actual Labels")
+plt.title("Confusion Matrix")
+
+plt.show()
+
+# ============================================================
+# CLASSIFICATION REPORT
+# ============================================================
+# Contains:
+#
+# Precision
+# Recall
+# F1-score
+# Accuracy
+# ============================================================
+
+print("\n========== CLASSIFICATION REPORT ==========" + "\n")
+
+print(classification_report(y_test, y_pred))
+
+# ============================================================
+# FINAL TEST ACCURACY
+# ============================================================
+
+test_loss, test_accuracy = model.evaluate(X_test, y_test_cat)
+
+print("\nFinal Test Accuracy :", test_accuracy)
+
+# ============================================================
+# OPTIONAL: DISPLAY SAMPLE PREDICTIONS
+# ============================================================
+
+print("\n========== SAMPLE PREDICTIONS ==========" + "\n")
+
+# Display first 5 test images with predictions
+
+for i in range(5):
+
+    plt.imshow(X_test[i].reshape(28, 28), cmap='gray')
+
+    plt.title(
+        f"Actual: {y_test[i]} | Predicted: {y_pred[i]}"
+    )
+
+    plt.axis('off')
+
+    plt.show()
+# ============================================================
+# END FILE: lab6-cnn-multclass-classifier-emnist.py
+# ============================================================
+
+
+# ============================================================
+# BEGIN FILE: lstm-future-weather-future.py
+# ============================================================
+# ============================================================
+# REAL WORLD TEMPERATURE PREDICTION USING LSTM
+# ============================================================
+#
+# DATASET:
+# Daily Minimum Temperatures Dataset
+#
+# Source:
+# Automatically downloaded from GitHub
+#
+# THIS PROJECT:
+#
+# Real Temperature Data
+#          ↓
+# Preprocessing
+#          ↓
+# LSTM Learns Weather Patterns
+#          ↓
+# Predict Future Temperature
+#
+# ============================================================
+
+# ============================================================
+# IMPORT LIBRARIES
+# ============================================================
+
+# NumPy
+# Used for numerical computations
+import numpy as np
+
+# Pandas
+# Used for dataframe handling
+import pandas as pd
+
+# Matplotlib
+# Used for plotting graphs
+import matplotlib.pyplot as plt
+
+# ============================================================
+# IMPORT LSTM MODULES
+# ============================================================
+
+from tensorflow.keras.models import Sequential
+
+from tensorflow.keras.layers import (
+
+    LSTM,
+    Dense
+)
+
+# ============================================================
+# IMPORT PREPROCESSING
+# ============================================================
+
+from sklearn.preprocessing import MinMaxScaler
+
+# ============================================================
+# IMPORT METRICS
+# ============================================================
+
+from sklearn.metrics import (
+
+    mean_squared_error,
+    mean_absolute_error,
+    r2_score
+)
+
+# ============================================================
+# STEP 1: DOWNLOAD REAL TEMPERATURE DATA
+# ============================================================
+
+print("\n========== LOADING REAL TEMPERATURE DATA ==========" + "\n")
+
+# Real-world dataset:
+#
+# Daily minimum temperatures in Melbourne
+#
+# Dataset contains:
+# - Date
+# - Temperature
+
+url = (
+    "https://raw.githubusercontent.com/"
+    "jbrownlee/Datasets/master/"
+    "daily-min-temperatures.csv"
+)
+
+# Load CSV
+data = pd.read_csv(url)
+
+# ============================================================
+# DISPLAY DATASET
+# ============================================================
+
+print(data.head())
+
+# ============================================================
+# STEP 2: EXTRACT TEMPERATURE COLUMN
+# ============================================================
+
+# Use only temperature values
+
+temp = data['Temp'].values
+
+# Convert into 2D array
+temp = temp.reshape(-1,1)
+
+print("\nTemperature Shape :", temp.shape)
+
+# ============================================================
+# STEP 3: NORMALIZATION
+# ============================================================
+
+print("\n========== NORMALIZATION ==========" + "\n")
+
+# Scale values between:
+#
+# 0 -> 1
+#
+# Benefits:
+# - stable training
+# - faster convergence
+# - smoother gradients
+
+scaler = MinMaxScaler()
+
+temp_scaled = scaler.fit_transform(temp)
+
+print("Normalization Completed!")
+
+# ============================================================
+# STEP 4: CREATE SEQUENCES
+# ============================================================
+
+print("\n========== CREATING SEQUENCES ==========" + "\n")
+
+# Previous 30 days
+#        ↓
+# Predict next day
+
+X = []
+y = []
+
+# Sliding window approach
+for i in range(30, len(temp_scaled)):
+
+    # Previous 30 days
+    X.append(temp_scaled[i-30:i])
+
+    # Current day target
+    y.append(temp_scaled[i])
+
+# Convert into arrays
+X = np.array(X)
+y = np.array(y)
+
+# ============================================================
+# DISPLAY SHAPES
+# ============================================================
+
+print("Input Shape  :", X.shape)
+print("Target Shape :", y.shape)
+
+# ============================================================
+# UNDERSTANDING SHAPE
+# ============================================================
+
+# Shape:
+#
+# (samples, timesteps, features)
+#
+# Example:
+#
+# (3620, 30, 1)
+#
+# Meaning:
+#
+# 3620 sequences
+# 30 previous days
+# 1 feature (temperature)
+
+# ============================================================
+# STEP 5: TRAIN TEST SPLIT
+# ============================================================
+
+print("\n========== TRAIN TEST SPLIT ==========" + "\n")
+
+# 80% training
+# 20% testing
+
+split_idx = int(len(X) * 0.8)
+
+# Training data
+X_train = X[:split_idx]
+y_train = y[:split_idx]
+
+# Testing data
+X_test = X[split_idx:]
+y_test = y[split_idx:]
+
+print("Training Samples :", len(X_train))
+print("Testing Samples  :", len(X_test))
+
+# ============================================================
+# STEP 6: BUILD LSTM MODEL
+# ============================================================
+
+print("\n========== BUILDING LSTM MODEL ==========" + "\n")
+
+# Sequential model
+model = Sequential()
+
+# ------------------------------------------------------------
+# LSTM LAYER
+# ------------------------------------------------------------
+
+# LSTM:
+# Long Short-Term Memory
+#
+# Learns temporal dependencies
+#
+# 50:
+# number of neurons / memory cells
+
+model.add(
+
+    LSTM(
+
+        50,
+
+        input_shape=(X.shape[1],1)
+    )
+)
+
+# ============================================================
+# OUTPUT LAYER
+# ============================================================
+
+# Predict one temperature value
+
+model.add(Dense(1))
+
+# ============================================================
+# DISPLAY MODEL SUMMARY
+# ============================================================
+
+model.summary()
+
+# ============================================================
+# STEP 7: COMPILE MODEL
+# ============================================================
+
+print("\n========== COMPILING MODEL ==========" + "\n")
+
+# Adam optimizer:
+# adaptive optimizer
+#
+# MSE:
+# regression loss function
+
+model.compile(
+
+    optimizer='adam',
+
+    loss='mean_squared_error'
+)
+
+print("Model Compilation Completed!")
+
+# ============================================================
+# STEP 8: TRAIN MODEL
+# ============================================================
+
+print("\n========== TRAINING MODEL ==========" + "\n")
+
+history = model.fit(
+
+    X_train,
+    y_train,
+
+    epochs=10,
+
+    batch_size=32,
+
+    validation_data=(X_test, y_test)
+)
+
+print("\nModel Training Completed!")
+
+# ============================================================
+# STEP 9: MAKE PREDICTIONS
+# ============================================================
+
+print("\n========== MAKING PREDICTIONS ==========" + "\n")
+
+# Predict normalized values
+predicted_scaled = model.predict(X_test)
+
+# Convert predictions back into real temperatures
+predicted = scaler.inverse_transform(predicted_scaled)
+
+# Convert actual values too
+actual = scaler.inverse_transform(y_test)
+
+# ============================================================
+# STEP 10: EVALUATION
+# ============================================================
+
+print("\n========== MODEL EVALUATION ==========" + "\n")
+
+# Mean Squared Error
+mse = mean_squared_error(actual, predicted)
+
+# Mean Absolute Error
+mae = mean_absolute_error(actual, predicted)
+
+# Root Mean Squared Error
+rmse = np.sqrt(mse)
+
+# R² Score
+r2 = r2_score(actual, predicted)
+
+print(f"MSE  : {mse:.4f}")
+print(f"MAE  : {mae:.4f}")
+print(f"RMSE : {rmse:.4f}")
+print(f"R2   : {r2:.4f}")
+
+# ============================================================
+# STEP 11: DISPLAY SAMPLE PREDICTIONS
+# ============================================================
+
+print("\n========== SAMPLE PREDICTIONS ==========" + "\n")
+
+for i in range(-5, 0):
+
+    actual_val = actual[i][0]
+
+    pred_val = predicted[i][0]
+
+    print(
+
+        f"Actual Temp: {actual_val:.2f}°C | "
+        f"Predicted Temp: {pred_val:.2f}°C"
+    )
+
+# ============================================================
+# STEP 12: VISUALIZATION
+# ============================================================
+
+print("\n========== PLOTTING RESULTS ==========" + "\n")
+
+plt.figure(figsize=(12,6))
+
+# Actual temperatures
+plt.plot(
+
+    actual,
+
+    label="Actual Temperature"
+)
+
+# Predicted temperatures
+plt.plot(
+
+    predicted,
+
+    label="Predicted Temperature"
+)
+
+# Graph title
+plt.title("Real World Temperature Prediction using LSTM")
+
+# Axis labels
+plt.xlabel("Days")
+
+plt.ylabel("Temperature")
+
+# Show legend
+plt.legend()
+
+# Show graph
+plt.show()
+
+# ============================================================
+# FINAL FLOW
+# ============================================================
+
+# Real Temperature Data
+#          ↓
+# Normalization
+#          ↓
+# Create Sequences
+#          ↓
+# LSTM Learns Weather Patterns
+#          ↓
+# Predict Future Temperature
+#          ↓
+# Inverse Scaling
+#          ↓
+# Evaluation
+#          ↓
+# Visualization
+#
+# ============================================================
+
+# ============================================================
+# IMPORTANT CONCEPTS USED
+# ============================================================
+
+# 1. Time Series
+# Sequential data collected over time
+#
+# 2. LSTM
+# Deep learning model for sequence learning
+#
+# 3. Sliding Window
+# Uses previous 30 days to predict next day
+#
+# 4. Temporal Dependency
+# Future depends on past
+#
+# 5. Normalization
+# Scaling values between 0 and 1
+#
+# 6. Regression
+# Predicting continuous values
+#
+# ============================================================
+# ============================================================
+# END FILE: lstm-future-weather-future.py
+# ============================================================
+
+
+# ============================================================
+# BEGIN FILE: mnist-fashion-lab8.py
+# ============================================================
+# ============================================================
+# FASHION MNIST CLASSIFICATION USING CNN
+# ============================================================
+
+# ============================================================
+# IMPORT LIBRARIES
+# ============================================================
+
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+# Fashion MNIST dataset
+from tensorflow.keras.datasets import fashion_mnist
+
+# Sequential model
+from tensorflow.keras.models import Sequential
+
+# CNN layers
+from tensorflow.keras.layers import (
+    Conv2D,
+    MaxPooling2D,
+    Flatten,
+    Dense,
+    Dropout
+)
+
+# One-hot encoding
+from tensorflow.keras.utils import to_categorical
+
+# Evaluation metrics
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report
+)
+
+# ============================================================
+# STEP 1: LOAD DATASET
+# ============================================================
+
+(X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
+
+# ============================================================
+# DISPLAY SHAPES
+# ============================================================
+
+print("Training Shape:", X_train.shape)
+print("Testing Shape :", X_test.shape)
+
+# ============================================================
+# STEP 2: RESHAPE DATA
+# ============================================================
+
+# CNN expects:
+#
+# (samples, height, width, channels)
+#
+# Fashion MNIST images:
+# 28x28 grayscale
+#
+# So channels = 1
+
+X_train = X_train.reshape(-1, 28, 28, 1)
+
+X_test = X_test.reshape(-1, 28, 28, 1)
+
+# ============================================================
+# STEP 3: NORMALIZATION
+# ============================================================
+
+# Convert pixel values:
+#
+# 0-255 -> 0-1
+
+X_train = X_train / 255.0
+
+X_test = X_test / 255.0
+
+# ============================================================
+# STEP 4: ONE HOT ENCODING
+# ============================================================
+
+# Example:
+#
+# 3 -> [0 0 0 1 0 0 0 0 0 0]
+
+y_train_cat = to_categorical(y_train, 10)
+
+y_test_cat = to_categorical(y_test, 10)
+
+# ============================================================
+# STEP 5: BUILD CNN MODEL
+# ============================================================
+
+model = Sequential()
+
+# ------------------------------------------------------------
+# FIRST CONVOLUTION BLOCK
+# ------------------------------------------------------------
+
+model.add(
+
+    Conv2D(
+
+        filters=32,
+
+        kernel_size=(3,3),
+
+        activation='relu',
+
+        input_shape=(28,28,1)
+    )
+)
+
+model.add(
+    MaxPooling2D(pool_size=(2,2))
+)
+
+# ------------------------------------------------------------
+# SECOND CONVOLUTION BLOCK
+# ------------------------------------------------------------
+
+model.add(
+
+    Conv2D(
+
+        filters=64,
+
+        kernel_size=(3,3),
+
+        activation='relu'
+    )
+)
+
+model.add(
+    MaxPooling2D(pool_size=(2,2))
+)
+
+# ============================================================
+# FLATTEN
+# ============================================================
+
+model.add(Flatten())
+
+# ============================================================
+# DENSE LAYER
+# ============================================================
+
+model.add(Dense(128, activation='relu'))
+
+# ============================================================
+# DROPOUT
+# ============================================================
+
+model.add(Dropout(0.5))
+
+# ============================================================
+# OUTPUT LAYER
+# ============================================================
+
+# 10 neurons because:
+# 10 clothing categories
+
+model.add(Dense(10, activation='softmax'))
+
+# ============================================================
+# MODEL SUMMARY
+# ============================================================
+
+model.summary()
+
+# ============================================================
+# COMPILE MODEL
+# ============================================================
+
+model.compile(
+
+    optimizer='adam',
+
+    loss='categorical_crossentropy',
+
+    metrics=['accuracy']
+)
+
+# ============================================================
+# TRAIN MODEL
+# ============================================================
+
+history = model.fit(
+
+    X_train,
+    y_train_cat,
+
+    epochs=5,
+
+    batch_size=64,
+
+    validation_data=(X_test, y_test_cat)
+)
+
+# ============================================================
+# MODEL EVALUATION
+# ============================================================
+
+loss, accuracy = model.evaluate(X_test, y_test_cat)
+
+print("\nTest Accuracy:", accuracy)
+
+# ============================================================
+# PREDICTIONS
+# ============================================================
+
+y_pred_probs = model.predict(X_test)
+
+# Convert probabilities into labels
+y_pred = np.argmax(y_pred_probs, axis=1)
+
+# ============================================================
+# CONFUSION MATRIX
+# ============================================================
+
+cm = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(10,8))
+
+sns.heatmap(
+
+    cm,
+
+    annot=True,
+
+    fmt='d',
+
+    cmap='Blues'
+)
+
+plt.xlabel("Predicted")
+
+plt.ylabel("Actual")
+
+plt.title("Confusion Matrix")
+
+plt.show()
+
+# ============================================================
+# CLASSIFICATION REPORT
+# ============================================================
+
+print("\nClassification Report:\n")
+
+print(classification_report(y_test, y_pred))
+
+# ============================================================
+# DISPLAY SAMPLE PREDICTIONS
+# ============================================================
+
+class_names = [
+
+    "T-shirt",
+    "Trouser",
+    "Pullover",
+    "Dress",
+    "Coat",
+    "Sandal",
+    "Shirt",
+    "Sneaker",
+    "Bag",
+    "Ankle Boot"
+]
+
+for i in range(5):
+
+    plt.imshow(
+        X_test[i].reshape(28,28),
+        cmap='gray'
+    )
+
+    plt.title(
+
+        f"Actual: {class_names[y_test[i]]}\n"
+        f"Predicted: {class_names[y_pred[i]]}"
+    )
+
+    plt.axis('off')
+
+    plt.show()
+# ============================================================
+# END FILE: mnist-fashion-lab8.py
+# ============================================================
+
+
+# ============================================================
+# BEGIN FILE: plant-disease-cnn-lab7.py
+# ============================================================
+# ============================================================
+# PLANT DISEASE DETECTION USING CNN
+# ============================================================
+#
+# THIS CODE:
+#
+# 1. Downloads CIFAR-10 dataset automatically
+# 2. Uses selected classes as plant disease categories
+# 3. Preprocesses images
+# 4. Builds CNN model
+# 5. Trains CNN
+# 6. Evaluates model
+# 7. Displays confusion matrix
+# 8. Shows sample predictions
+#
+# NOTE:
+# ------------------------------------------------------------
+# TensorFlow does not provide an inbuilt plant disease dataset
+# like MNIST/Fashion-MNIST.
+#
+# So for a SELF-CONTAINED runnable assignment,
+# we use CIFAR-10 images and simulate plant disease classes.
+#
+# This is useful for:
+# - CNN learning
+# - academic assignments
+# - understanding image classification pipeline
+#
+# ============================================================
+
+# ============================================================
+# IMPORT LIBRARIES
+# ============================================================
+
+# NumPy
+# Used for arrays and numerical operations
+import numpy as np
+
+# Matplotlib
+# Used for plotting images and graphs
+import matplotlib.pyplot as plt
+
+# Seaborn
+# Used for confusion matrix heatmap
+import seaborn as sns
+
+# ============================================================
+# IMPORT DATASET
+# ============================================================
+
+# CIFAR-10 dataset
+#
+# Automatically downloads dataset
+# during first execution
+from tensorflow.keras.datasets import cifar10
+
+# ============================================================
+# IMPORT CNN MODULES
+# ============================================================
+
+# Sequential model:
+# layers added one after another
+from tensorflow.keras.models import Sequential
+
+# CNN layers
+from tensorflow.keras.layers import (
+
+    Conv2D,          # convolution layer
+    MaxPooling2D,    # pooling layer
+    Flatten,         # converts feature maps -> vector
+    Dense,           # fully connected layer
+    Dropout          # reduces overfitting
+)
+
+# One-hot encoding
+from tensorflow.keras.utils import to_categorical
+
+# ============================================================
+# IMPORT EVALUATION METRICS
+# ============================================================
+
+from sklearn.metrics import (
+
+    confusion_matrix,
+    classification_report
+)
+
+# ============================================================
+# STEP 1: LOAD DATASET
+# ============================================================
+
+print("\n========== LOADING DATASET ==========" + "\n")
+
+# CIFAR-10 classes:
+#
+# 0 airplane
+# 1 automobile
+# 2 bird
+# 3 cat
+# 4 deer
+# 5 dog
+# 6 frog
+# 7 horse
+# 8 ship
+# 9 truck
+#
+# We will simulate plant disease categories:
+#
+# bird  -> Healthy Leaf
+# deer  -> Leaf Rust
+# frog  -> Leaf Spot
+
+(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+
+# ============================================================
+# DISPLAY ORIGINAL SHAPES
+# ============================================================
+
+print("Original Training Shape :", X_train.shape)
+print("Original Testing Shape  :", X_test.shape)
+
+# ============================================================
+# STEP 2: SELECT ONLY 3 CLASSES
+# ============================================================
+
+# Selected classes:
+#
+# 2 -> Healthy Leaf
+# 4 -> Leaf Rust
+# 6 -> Leaf Spot
+
+selected_classes = [2, 4, 6]
+
+# ============================================================
+# CREATE MASKS
+# ============================================================
+
+# np.isin() checks whether labels belong to selected classes
+
+train_mask = np.isin(
+    y_train,
+    selected_classes
+).flatten()
+
+test_mask = np.isin(
+    y_test,
+    selected_classes
+).flatten()
+
+# ============================================================
+# FILTER DATASET
+# ============================================================
+
+X_train = X_train[train_mask]
+y_train = y_train[train_mask]
+
+X_test = X_test[test_mask]
+y_test = y_test[test_mask]
+
+# ============================================================
+# REMAP LABELS
+# ============================================================
+
+# Original labels:
+#
+# 2,4,6
+#
+# Convert into:
+#
+# 0,1,2
+#
+# Required for classification
+
+label_map = {
+
+    2:0,
+    4:1,
+    6:2
+}
+
+# Apply mapping to training labels
+y_train = np.array([
+
+    label_map[label[0]]
+
+    for label in y_train
+])
+
+# Apply mapping to testing labels
+y_test = np.array([
+
+    label_map[label[0]]
+
+    for label in y_test
+])
+
+# ============================================================
+# DISPLAY NEW SHAPES
+# ============================================================
+
+print("\nFiltered Training Shape :", X_train.shape)
+print("Filtered Testing Shape  :", X_test.shape)
+
+# ============================================================
+# STEP 3: NORMALIZATION
+# ============================================================
+
+print("\n========== NORMALIZATION ==========" + "\n")
+
+# Pixel values originally:
+#
+# 0 -> 255
+#
+# Normalize into:
+#
+# 0 -> 1
+#
+# Benefits:
+# - stable gradients
+# - faster convergence
+# - smoother optimization
+
+X_train = X_train / 255.0
+X_test = X_test / 255.0
+
+print("Normalization Completed!")
+
+# ============================================================
+# STEP 4: ONE HOT ENCODING
+# ============================================================
+
+print("\n========== ONE HOT ENCODING ==========" + "\n")
+
+# Example:
+#
+# 0 -> [1 0 0]
+# 1 -> [0 1 0]
+# 2 -> [0 0 1]
+
+y_train_cat = to_categorical(y_train, 3)
+y_test_cat = to_categorical(y_test, 3)
+
+print("One Hot Encoding Completed!")
+
+# ============================================================
+# STEP 5: BUILD CNN MODEL
+# ============================================================
+
+print("\n========== BUILDING CNN MODEL ==========" + "\n")
+
+# Sequential model
+model = Sequential()
+
+# ------------------------------------------------------------
+# FIRST CONVOLUTION BLOCK
+# ------------------------------------------------------------
+
+# Conv2D:
+#
+# Learns image features:
+# - edges
+# - textures
+# - patterns
+#
+# 32 filters:
+# model learns 32 feature detectors
+#
+# (3,3):
+# filter size
+#
+# ReLU:
+# activation function
+
+model.add(
+
+    Conv2D(
+
+        filters=32,
+
+        kernel_size=(3,3),
+
+        activation='relu',
+
+        input_shape=(32,32,3)
+    )
+)
+
+# ------------------------------------------------------------
+# MAX POOLING
+# ------------------------------------------------------------
+
+# Reduces feature map size
+#
+# Benefits:
+# - less computation
+# - less overfitting
+
+model.add(
+
+    MaxPooling2D(pool_size=(2,2))
+)
+
+# ------------------------------------------------------------
+# SECOND CONVOLUTION BLOCK
+# ------------------------------------------------------------
+
+model.add(
+
+    Conv2D(
+
+        filters=64,
+
+        kernel_size=(3,3),
+
+        activation='relu'
+    )
+)
+
+model.add(
+
+    MaxPooling2D(pool_size=(2,2))
+)
+
+# ------------------------------------------------------------
+# THIRD CONVOLUTION BLOCK
+# ------------------------------------------------------------
+
+model.add(
+
+    Conv2D(
+
+        filters=128,
+
+        kernel_size=(3,3),
+
+        activation='relu'
+    )
+)
+
+model.add(
+
+    MaxPooling2D(pool_size=(2,2))
+)
+
+# ============================================================
+# FLATTEN LAYER
+# ============================================================
+
+# Converts multidimensional feature maps
+# into single vector
+
+model.add(Flatten())
+
+# ============================================================
+# DENSE LAYER
+# ============================================================
+
+# Fully connected layer
+
+model.add(
+
+    Dense(
+
+        128,
+
+        activation='relu'
+    )
+)
+
+# ============================================================
+# DROPOUT LAYER
+# ============================================================
+
+# Randomly disables neurons during training
+#
+# Helps reduce overfitting
+
+model.add(
+
+    Dropout(0.5)
+)
+
+# ============================================================
+# OUTPUT LAYER
+# ============================================================
+
+# 3 neurons:
+#
+# Healthy Leaf
+# Leaf Rust
+# Leaf Spot
+#
+# Softmax:
+# converts outputs into probabilities
+
+model.add(
+
+    Dense(
+
+        3,
+
+        activation='softmax'
+    )
+)
+
+# ============================================================
+# DISPLAY MODEL SUMMARY
+# ============================================================
+
+model.summary()
+
+# ============================================================
+# STEP 6: COMPILE MODEL
+# ============================================================
+
+print("\n========== COMPILING MODEL ==========" + "\n")
+
+# optimizer='adam'
+#
+# Adam optimizer:
+# efficient weight updates
+#
+# loss='categorical_crossentropy'
+#
+# Used for multiclass classification
+
+model.compile(
+
+    optimizer='adam',
+
+    loss='categorical_crossentropy',
+
+    metrics=['accuracy']
+)
+
+print("Model Compilation Completed!")
+
+# ============================================================
+# STEP 7: TRAIN MODEL
+# ============================================================
+
+print("\n========== TRAINING MODEL ==========" + "\n")
+
+# epochs=5
+#
+# Entire dataset passed 5 times
+#
+# batch_size=64
+#
+# Processes 64 images together
+
+history = model.fit(
+
+    X_train,
+    y_train_cat,
+
+    epochs=5,
+
+    batch_size=64,
+
+    validation_data=(X_test, y_test_cat)
+)
+
+print("\nModel Training Completed!")
+
+# ============================================================
+# STEP 8: EVALUATE MODEL
+# ============================================================
+
+print("\n========== MODEL EVALUATION ==========" + "\n")
+
+loss, accuracy = model.evaluate(
+
+    X_test,
+    y_test_cat
+)
+
+print("\nTest Accuracy :", accuracy)
+
+# ============================================================
+# STEP 9: PREDICTIONS
+# ============================================================
+
+# Predict probabilities
+y_pred_probs = model.predict(X_test)
+
+# Convert probabilities -> labels
+y_pred = np.argmax(y_pred_probs, axis=1)
+
+# ============================================================
+# STEP 10: CONFUSION MATRIX
+# ============================================================
+
+print("\n========== CONFUSION MATRIX ==========" + "\n")
+
+cm = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(8,6))
+
+sns.heatmap(
+
+    cm,
+
+    annot=True,
+
+    fmt='d',
+
+    cmap='Blues'
+)
+
+plt.xlabel("Predicted")
+
+plt.ylabel("Actual")
+
+plt.title("Confusion Matrix")
+
+plt.show()
+
+# ============================================================
+# STEP 11: CLASSIFICATION REPORT
+# ============================================================
+
+print("\n========== CLASSIFICATION REPORT ==========" + "\n")
+
+print(classification_report(y_test, y_pred))
+
+# ============================================================
+# STEP 12: DISPLAY SAMPLE PREDICTIONS
+# ============================================================
+
+print("\n========== SAMPLE PREDICTIONS ==========" + "\n")
+
+class_names = [
+
+    "Healthy Leaf",
+    "Leaf Rust",
+    "Leaf Spot"
+]
+
+# Display first 5 predictions
+for i in range(5):
+
+    plt.imshow(X_test[i])
+
+    plt.title(
+
+        f"Actual: {class_names[y_test[i]]}\n"
+        f"Predicted: {class_names[y_pred[i]]}"
+    )
+
+    plt.axis('off')
+
+    plt.show()
+
+# ============================================================
+# STEP 13: PLOT TRAINING ACCURACY
+# ============================================================
+
+plt.plot(history.history['accuracy'])
+
+plt.plot(history.history['val_accuracy'])
+
+plt.title("Training vs Validation Accuracy")
+
+plt.xlabel("Epoch")
+
+plt.ylabel("Accuracy")
+
+plt.legend(["Train", "Validation"])
+
+plt.show()
+
+# ============================================================
+# FINAL FLOW OF PROJECT
+# ============================================================
+
+# Dataset
+#    ↓
+# Preprocessing
+#    ↓
+# CNN Feature Extraction
+#    ↓
+# Pooling
+#    ↓
+# Flatten
+#    ↓
+# Dense Layers
+#    ↓
+# Softmax Classification
+#    ↓
+# Plant Disease Prediction
+#
+# ============================================================
+# ============================================================
+# END FILE: plant-disease-cnn-lab7.py
+# ============================================================
+
+
+# ============================================================
+# BEGIN FILE: rnn-stock-lab9.py
+# ============================================================
+# ============================================================
+# ASSIGNMENT:
+# STOCK PRICE PREDICTION USING RNN
+# ============================================================
+
+# ============================================================
+# IMPORT LIBRARIES
+# ============================================================
+
+# NumPy
+# Used for numerical computations and arrays
+import numpy as np
+
+# Pandas
+# Used for handling tabular/time-series data
+import pandas as pd
+
+# Matplotlib
+# Used for plotting graphs
+import matplotlib.pyplot as plt
+
+# yfinance
+# Used to download stock market data from Yahoo Finance
+import yfinance as yf
+
+# ============================================================
+# IMPORT DEEP LEARNING MODULES
+# ============================================================
+
+# Sequential model:
+# layers are added one after another
+from tensorflow.keras.models import Sequential
+
+# SimpleRNN:
+# basic recurrent neural network layer
+#
+# Dense:
+# fully connected output layer
+from tensorflow.keras.layers import SimpleRNN, Dense
+
+# ============================================================
+# IMPORT PREPROCESSING & METRICS
+# ============================================================
+
+# MinMaxScaler:
+# used for normalization (0 to 1 scaling)
+from sklearn.preprocessing import MinMaxScaler
+
+# Regression evaluation metrics
+from sklearn.metrics import (
+    mean_squared_error,
+    mean_absolute_error,
+    r2_score,
+    mean_absolute_percentage_error
+)
+
+# ============================================================
+# STEP 1: DOWNLOAD STOCK DATA
+# ============================================================
+
+print("\n========== DOWNLOADING STOCK DATA ==========" + "\n")
+
+# Download Apple stock data
+#
+# start -> starting date
+# end   -> ending date
+#
+# Dataset contains:
+# Open, High, Low, Close, Volume etc.
+data = yf.download(
+    'AAPL',
+    start='2020-01-01',
+    end='2024-01-01'
+)
+
+# Display first 5 rows
+print(data.head())
+
+# ============================================================
+# STEP 2: USE CLOSING PRICE
+# ============================================================
+
+# We use only closing price for prediction
+#
+# Closing price is the final market price of the day
+prices = data['Close'].values
+
+# reshape(-1,1)
+#
+# Converts:
+# [100,101,102]
+#
+# into:
+# [[100],
+#  [101],
+#  [102]]
+#
+# Required because scaler expects 2D input
+prices = prices.reshape(-1, 1)
+
+print("\nClosing Price Shape:", prices.shape)
+
+# ============================================================
+# STEP 3: NORMALIZATION
+# ============================================================
+
+print("\n========== NORMALIZATION ==========" + "\n")
+
+# MinMaxScaler scales data between:
+# 0 and 1
+#
+# Formula:
+#
+# x' = (x - xmin) / (xmax - xmin)
+#
+# Why normalization?
+#
+# - improves training stability
+# - faster convergence
+# - prevents large gradients
+scaler = MinMaxScaler(feature_range=(0, 1))
+
+# Fit scaler and transform prices
+prices_scaled = scaler.fit_transform(prices)
+
+print("Normalization Completed!")
+
+# ============================================================
+# STEP 4: CREATE SEQUENCES
+# ============================================================
+
+print("\n========== CREATING SEQUENCES ==========" + "\n")
+
+# RNN learns from previous time steps
+#
+# Here:
+# previous 60 days -> predict next day
+#
+# Example:
+#
+# Day1 -> Day60  => predict Day61
+# Day2 -> Day61  => predict Day62
+#
+# This is called Sliding Window approach
+
+X = []   # input sequences
+y = []   # target values
+
+# Start from day 60
+for i in range(60, len(prices_scaled)):
+
+    # Previous 60 days
+    X.append(prices_scaled[i-60:i])
+
+    # Current day (target)
+    y.append(prices_scaled[i])
+
+# Convert lists into numpy arrays
+X = np.array(X)
+y = np.array(y)
+
+# Display shapes
+print("Input Shape  :", X.shape)
+print("Target Shape :", y.shape)
+
+# ============================================================
+# UNDERSTANDING SHAPES
+# ============================================================
+
+# X shape:
+#
+# (samples, timesteps, features)
+#
+# Example:
+#
+# (946, 60, 1)
+#
+# Meaning:
+#
+# 946 sequences
+# each sequence has 60 timesteps
+# each timestep has 1 feature (closing price)
+
+# ============================================================
+# STORE TARGET DATES
+# ============================================================
+
+# Dates corresponding to target values
+target_dates = data.index[60:]
+
+# ============================================================
+# STEP 5: TRAIN TEST SPLIT
+# ============================================================
+
+print("\n========== TRAIN TEST SPLIT ==========" + "\n")
+
+# 80% training
+# 20% testing
+
+split_idx = int(len(X) * 0.8)
+
+# Training data
+X_train = X[:split_idx]
+y_train = y[:split_idx]
+
+# Testing data
+X_test = X[split_idx:]
+y_test = y[split_idx:]
+
+# Store test dates
+test_dates = target_dates[split_idx:]
+
+print("Training Samples :", len(X_train))
+print("Testing Samples  :", len(X_test))
+
+# ============================================================
+# IMPORTANT:
+# ============================================================
+
+# In time series:
+# NEVER randomly shuffle data
+#
+# Because:
+# future should not come before past
+#
+# Must preserve chronological order
+
+# ============================================================
+# STEP 6: BUILD RNN MODEL
+# ============================================================
+
+print("\n========== BUILDING RNN MODEL ==========" + "\n")
+
+# Sequential model:
+# layers added one after another
+model = Sequential()
+
+# ------------------------------------------------------------
+# SIMPLE RNN LAYER
+# ------------------------------------------------------------
+
+# SimpleRNN:
+# recurrent neural network layer
+#
+# 50 = number of neurons / hidden units
+#
+# input_shape=(60,1)
+#
+# 60 -> timesteps (previous 60 days)
+# 1  -> feature count
+#
+# RNN remembers previous information using hidden state
+
+model.add(
+    SimpleRNN(
+        units=50,
+        input_shape=(X.shape[1], 1)
+    )
+)
+
+# ------------------------------------------------------------
+# DENSE OUTPUT LAYER
+# ------------------------------------------------------------
+
+# Dense(1):
+# one neuron because:
+# predicting one stock price
+
+model.add(Dense(1))
+
+# ============================================================
+# MODEL SUMMARY
+# ============================================================
+
+# Shows:
+# layers
+# output shapes
+# parameters
+model.summary()
+
+# ============================================================
+# STEP 7: COMPILE MODEL
+# ============================================================
+
+print("\n========== COMPILING MODEL ==========" + "\n")
+
+# optimizer='adam'
+#
+# Adam optimizer updates weights efficiently
+#
+# loss='mean_squared_error'
+#
+# Used for regression problems
+#
+# MSE Formula:
+#
+# MSE = average((actual - predicted)^2)
+
+model.compile(
+    optimizer='adam',
+    loss='mean_squared_error'
+)
+
+print("Model Compilation Completed!")
+
+# ============================================================
+# STEP 8: TRAIN MODEL
+# ============================================================
+
+print("\n========== TRAINING MODEL ==========" + "\n")
+
+# model.fit() starts training
+#
+# epochs=5
+# entire dataset passes 5 times
+#
+# batch_size=32
+# processes 32 sequences together
+
+history = model.fit(
+    X_train,
+    y_train,
+
+    epochs=5,
+    batch_size=32
+)
+
+print("\nModel Training Completed!")
+
+# ============================================================
+# STEP 9: PREDICT STOCK PRICES
+# ============================================================
+
+print("\n========== MAKING PREDICTIONS ==========" + "\n")
+
+# Predict normalized values
+predicted_scaled = model.predict(X_test)
+
+# ============================================================
+# INVERSE TRANSFORM
+# ============================================================
+
+# Model predictions are normalized
+#
+# Convert back to actual stock prices
+
+predicted = scaler.inverse_transform(predicted_scaled)
+
+# Convert actual test values back too
+actual = scaler.inverse_transform(y_test)
+
+# ============================================================
+# STEP 10: EVALUATION METRICS
+# ============================================================
+
+print("\n========== EVALUATION METRICS ==========" + "\n")
+
+# ------------------------------------------------------------
+# MEAN SQUARED ERROR (MSE)
+# ------------------------------------------------------------
+#
+# Measures average squared error
+#
+# Lower = better
+#
+# Formula:
+#
+# MSE = average((actual - predicted)^2)
+
+mse = mean_squared_error(actual, predicted)
+
+# ------------------------------------------------------------
+# MEAN ABSOLUTE ERROR (MAE)
+# ------------------------------------------------------------
+#
+# Average absolute difference
+#
+# Easier to interpret than MSE
+
+mae = mean_absolute_error(actual, predicted)
+
+# ------------------------------------------------------------
+# ROOT MEAN SQUARED ERROR (RMSE)
+# ------------------------------------------------------------
+#
+# Square root of MSE
+#
+# Gives error in original units
+
+rmse = np.sqrt(mse)
+
+# ------------------------------------------------------------
+# R² SCORE
+# ------------------------------------------------------------
+#
+# Measures goodness of fit
+#
+# 1  -> perfect
+# 0  -> poor
+# <0 -> terrible
+
+r2 = r2_score(actual, predicted)
+
+# ------------------------------------------------------------
+# MAPE
+# ------------------------------------------------------------
+#
+# Mean Absolute Percentage Error
+#
+# Gives percentage error
+
+mape = mean_absolute_percentage_error(
+    actual,
+    predicted
+) * 100.0
+
+# ============================================================
+# DISPLAY METRICS
+# ============================================================
+
+print(f"MSE  : {mse:.4f}")
+print(f"MAE  : {mae:.4f}")
+print(f"RMSE : {rmse:.4f}")
+print(f"R2   : {r2:.4f}")
+print(f"MAPE : {mape:.2f}%")
+
+# ============================================================
+# STEP 11: DISPLAY SAMPLE PREDICTIONS
+# ============================================================
+
+print("\n========== SAMPLE PREDICTIONS ==========" + "\n")
+
+# Display last 5 predictions
+
+for i in range(-5, 0):
+
+    # Convert date into string
+    date_str = test_dates[i].strftime("%Y-%m-%d")
+
+    # Actual stock price
+    actual_val = actual[i][0]
+
+    # Predicted stock price
+    pred_val = predicted[i][0]
+
+    print(
+        f"{date_str} | "
+        f"Actual: {actual_val:.2f} | "
+        f"Predicted: {pred_val:.2f}"
+    )
+
+# ============================================================
+# STEP 12: VISUALIZATION
+# ============================================================
+
+print("\n========== PLOTTING RESULTS ==========" + "\n")
+
+# Plot actual stock prices
+plt.plot(
+    test_dates,
+    actual,
+    label="Actual Price"
+)
+
+# Plot predicted stock prices
+plt.plot(
+    test_dates,
+    predicted,
+    label="Predicted Price"
+)
+
+# Graph labels
+plt.xlabel("Date")
+plt.ylabel("Stock Price")
+plt.title("Apple Stock Price Prediction using RNN")
+
+# Show legend
+plt.legend()
+
+# Display graph
+plt.show()
+
+# ============================================================
+# FINAL UNDERSTANDING
+# ============================================================
+
+# FLOW OF ENTIRE PROJECT:
+#
+# Historical Prices
+#         ↓
+# Normalization
+#         ↓
+# Create 60-day Sequences
+#         ↓
+# RNN Learns Temporal Patterns
+#         ↓
+# Predict Next Price
+#         ↓
+# Inverse Scaling
+#         ↓
+# Evaluate Metrics
+#         ↓
+# Visualize Predictions
+#
+# ============================================================
+# ============================================================
+# END FILE: rnn-stock-lab9.py
+# ============================================================
